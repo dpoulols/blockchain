@@ -1,10 +1,13 @@
 const Block = require('./block');
+const Transaction = require('./transactions');
 
 class BlockChain {
 
     constructor(){
         this.chain = [this.createGenesisBlock()];
-        this.miningDifficulty = 5;
+        this.miningDifficulty = 4;
+        this.pendingTransactions = [];
+        this.miningReward = 10;
 
     }
 
@@ -16,14 +19,48 @@ class BlockChain {
         return this.chain[this.chain.length -1];
     }
 
-    addBlock(newBlock){
-        newBlock.previousHash = this.getLastBlock().hash;
-        // newBlock.hash = newBlock.calculateHash();
-        newBlock.mineBlock(this.miningDifficulty);
-        this.chain.push(newBlock);
+    // addBlock(newBlock){
+    //     newBlock.previousHash = this.getLastBlock().hash;
+    //     // newBlock.hash = newBlock.calculateHash();
+    //     newBlock.mineBlock(this.miningDifficulty);
+    //     this.chain.push(newBlock);
+    // }
+
+    addTransaction(transaction){
+        this.pendingTransactions.push(transaction);
     }
 
-    validateChain(){
+    minePendingTransactions(minerAddress){
+        let block = new Block(Date.now(), this.pendingTransactions);
+        block.previousHash = this.getLastBlock().hash;
+        block.mineBlock(this.miningDifficulty);
+        console.log('Block successfully mined');
+        this.chain.push(block);
+        // console.log('Cadena: ', this.chain[1].transactions);
+        this.pendingTransactions = [
+            new Transaction(null, minerAddress, this.miningReward)
+        ];
+    }
+
+    getBalanceOfAddress(address){
+        let balance = 0;
+        for( const block of this.chain){
+            console.log('Cadena: ', block.transactions);
+
+            for( const trans of block.transactions){
+                if (trans.fromAddress === address){
+                    balance -= trans.fromAddress;
+                }
+
+                if (trans.toAddress === address){
+                    balance += trans.amount;
+                }
+            }
+        }
+        return balance;
+    }
+
+    isChainValid(){
         for( let i=1; i<this.chain.length; i++){
             const currentBlock = this.chain[i];
             const previousBlock = this.chain[i-1];
