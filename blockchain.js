@@ -7,12 +7,12 @@ class BlockChain {
         this.chain = [this.createGenesisBlock()];
         this.miningDifficulty = 4;
         this.pendingTransactions = [];
-        this.miningReward = 10;
+        this.miningReward = 20;
 
     }
 
     createGenesisBlock(){
-        return new Block( '02/08/2021', {name:'Genesis Block', proofDate: 'https://www.20minutos.es/noticia/4782485/0/horoscopo-lunes-02-agosto-2021'}, '0'); // Primer bloque de mi blockchain
+        return new Block( {date:'02/08/2021', name:'Genesis Block', proofDate: 'https://www.20minutos.es/noticia/4782485/0/horoscopo-lunes-02-agosto-2021'},[], '0'); // Primer bloque de mi blockchain
     }
 
     getLastBlock(){
@@ -27,31 +27,40 @@ class BlockChain {
     // }
 
     addTransaction(transaction){
+        if (!transaction.fromAddress || !transaction.toAddress) {
+            throw new Error('Transaction must include from and to address');
+        }
+        
+        if (transaction.amount <= 0) {
+        throw new Error('Transaction amount should be higher than 0');
+        }
+        
+        // if (this.getBalanceOfAddress(transaction.fromAddress) < transaction.amount) {
+        // throw new Error('Not enough balance');
+        // }
+    
         this.pendingTransactions.push(transaction);
+        
     }
 
-    minePendingTransactions(minerAddress){
+    minePendingTransactions(minerRewardAddress){
+        let rewardTransaction = new Transaction(null, minerRewardAddress, this.miningReward);
+        this.pendingTransactions.push(rewardTransaction);
         let block = new Block(Date.now(), this.pendingTransactions);
         block.previousHash = this.getLastBlock().hash;
         block.mineBlock(this.miningDifficulty);
         console.log('Block successfully mined');
         this.chain.push(block);
-        // console.log('Cadena: ', this.chain[1].transactions);
-        this.pendingTransactions = [
-            new Transaction(null, minerAddress, this.miningReward)
-        ];
+        console.log('Bloque por minar', block);
     }
 
     getBalanceOfAddress(address){
         let balance = 0;
         for( const block of this.chain){
-            console.log('Cadena: ', block.transactions);
-
             for( const trans of block.transactions){
                 if (trans.fromAddress === address){
                     balance -= trans.fromAddress;
                 }
-
                 if (trans.toAddress === address){
                     balance += trans.amount;
                 }
